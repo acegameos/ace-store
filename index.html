@@ -1,67 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ace Game Store</title>
     <style>
-        body { background: #1a202c; color: white; font-family: sans-serif; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: #2d3748; padding: 15px; border-radius: 10px; text-align: center; }
-        .btn { background: #66c0f4; border: none; padding: 10px; cursor: pointer; border-radius: 5px; width: 100%; font-weight: bold; }
+        :root { --steam-blue: #1b2838; --steam-light-blue: #66c0f4; --gold: #ffd700; }
+        body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 100px; }
         
-        /* THE FLOATING CART - Will never disappear on a real site */
-        #cart-widget { position: fixed; bottom: 20px; right: 20px; background: #ffd700; color: black; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        /* Header */
+        header { background: var(--steam-blue); padding: 20px; text-align: center; border-bottom: 3px solid var(--steam-light-blue); }
+
+        /* Game Grid */
+        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+        .game-card { background: #161b22; border-radius: 8px; overflow: hidden; border: 1px solid #30363d; transition: 0.3s; }
+        .game-card:hover { transform: translateY(-5px); border-color: var(--steam-light-blue); }
+        .game-card img { width: 100%; display: block; }
+        .info { padding: 15px; }
+        .price { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+
+        /* Floating Cart */
+        #cart-button { position: fixed; bottom: 30px; right: 30px; background: var(--steam-light-blue); color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; font-weight: bold; }
+        #cart-count { position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; padding: 2px 8px; font-size: 12px; }
+
+        /* Add to Cart Button */
+        .add-btn { background: #4c6b22; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; border-radius: 4px; font-weight: bold; margin-top: 10px; }
+        .add-btn:hover { background: #5ea11b; }
     </style>
 </head>
 <body>
 
-    <div id="game-grid" class="grid">
-        </div>
+<header>
+    <h1>ACE GAME STORE</h1>
+    <p>Premium Digital PC Games</p>
+</header>
 
-    <div id="cart-widget">
-        <h4 style="margin:0">🛒 My Cart</h4>
-        <div id="cart-items">0 items</div>
-        <div id="cart-total">RM 0.00</div>
-        <button onclick="checkout()" style="margin-top:10px; width:100%">Checkout Telegram</button>
+<div class="store-grid" id="game-display">
     </div>
 
-    <script>
-        let cart = [];
+<div id="cart-button" onclick="checkout()">
+    🛒 <div id="cart-count">0</div>
+</div>
 
-        // This function would normally fetch from your Google Sheet
-        function loadGames() {
-            const games = [
-                { id: '3304770', name: 'Exposed Livestream', price: 4.00 },
-                { id: '1924140', name: 'Game B', price: 5.00 }
-            ];
+<script>
+    // --- YOUR GAME DATABASE (JUST ADD NEW GAMES HERE) ---
+    const games = [
+        { id: '3304770', name: 'Exposed Livestream', price: 4.00 },
+        { id: '1924140', name: 'Game B', price: 5.00 },
+        { id: '292030',  name: 'The Witcher 3', price: 10.00 }
+    ];
 
-            const grid = document.getElementById('game-grid');
-            grid.innerHTML = games.map(game => `
-                <div class="card">
-                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg" style="width:100%">
-                    <h3>${game.name}</h3>
-                    <p>RM ${game.price.toFixed(2)}</p>
-                    <button class="btn" onclick="addToCart('${game.name}', ${game.price})">ADD TO CART</button>
+    let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
+
+    function renderStore() {
+        const display = document.getElementById('game-display');
+        display.innerHTML = games.map(game => `
+            <div class="game-card">
+                <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg">
+                <div class="info">
+                    <div style="font-weight:bold">${game.name}</div>
+                    <div class="price">RM ${game.price.toFixed(2)}</div>
+                    <button class="add-btn" onclick="addToCart('${game.name}', ${game.price})">ADD TO CART</button>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join('');
+        updateCartCount();
+    }
 
-        function addToCart(name, price) {
-            cart.push({name, price});
-            updateUI();
-        }
+    function addToCart(name, price) {
+        cart.push({name, price});
+        localStorage.setItem('ace_cart', JSON.stringify(cart));
+        updateCartCount();
+        alert(name + " added to cart!");
+    }
 
-        function updateUI() {
-            document.getElementById('cart-items').innerText = cart.length + " items";
-            const total = cart.reduce((s, i) => s + i.price, 0);
-            document.getElementById('cart-total').innerText = "RM " + total.toFixed(2);
-        }
+    function updateCartCount() {
+        document.getElementById('cart-count').innerText = cart.length;
+    }
 
-        function checkout() {
-            const list = cart.map(i => i.name).join(", ");
-            window.open("https://t.me/acegameos?text=" + encodeURIComponent("I want to buy: " + list));
-        }
+    function checkout() {
+        if(cart.length === 0) return alert("Cart is empty!");
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        const itemNames = cart.map(i => i.name).join(", ");
+        
+        const message = `Order Request:\nItems: ${itemNames}\nTotal: RM ${total.toFixed(2)}`;
+        window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
+    }
 
-        loadGames();
-    </script>
+    renderStore();
+</script>
+
 </body>
 </html>
