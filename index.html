@@ -1181,24 +1181,48 @@
   }
 ];
 
-    let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
+let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
 
     function renderStore() {
         const display = document.getElementById('game-display');
-        if (!display) {
-            console.error("Could not find the game-display div!");
-            return;
-        }
-        display.innerHTML = games.map(game => `
+        if (!display) return;
+
+        display.innerHTML = games.map(game => {
+            // Use 4.00 if price is missing in the data
+            const gamePrice = game.price || 4.00; 
+            
+            return `
             <div class="game-card">
-                <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg">
+                <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg" 
+                     onerror="this.src='https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}'">
                 <div class="info">
-                    <div style="font-weight:bold">${game.name}</div>
-                    <div class="price">RM ${game.price.toFixed(2)}</div>
-                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${game.price})">ADD TO CART</button>
+                    <div style="font-weight:bold; color:white;">${game.name}</div>
+                    <div class="price">RM ${gamePrice.toFixed(2)}</div>
+                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${gamePrice})">ADD TO CART</button>
                 </div>
             </div>
-        `).join(''); // Added .join('') to prevent commas between cards
+        `}).join('');
+    }
+
+    function addToCart(name, price) {
+        cart.push({name, price});
+        localStorage.setItem('ace_cart', JSON.stringify(cart));
+        updateCartCount();
+        alert(name + " added to cart!");
+    }
+
+    function updateCartCount() {
+        const countEl = document.getElementById('cart-count');
+        if(countEl) countEl.innerText = cart.length;
+    }
+
+    function checkout() {
+        if(cart.length === 0) return alert("Cart is empty!");
+        const total = cart.reduce((sum, item) => sum + (item.price || 4.00), 0);
+        const itemNames = cart.map(i => i.name).join("\n- ");
+        
+        const message = `Order Request from Ace Store:\n\nItems:\n- ${itemNames}\n\nTotal: RM ${total.toFixed(2)}`;
+        window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
     }
 
     // --- EXECUTION AREA (Run these when the page loads) ---
