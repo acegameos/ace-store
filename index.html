@@ -31,12 +31,11 @@
 <body>
 
 <header>
-    <h1>ACE GAME STORE</h1>
-    <p>Premium Digital PC Games</p>
+    <h1>Welcome to Ace Game R18 Official Store</h1>
+    <p>⚡Pay Less, Play More⚡</p>
 </header>
 
-<div class="store-grid" id="game-display">
-    </div>
+<div class="store-grid" id="game-display"></div>
 
 <div id="cart-button" onclick="checkout()">
     🛒 <div id="cart-count">0</div>
@@ -1186,18 +1185,25 @@
 
     function renderStore() {
         const display = document.getElementById('game-display');
+        if (!display) {
+            console.error("Could not find the game-display div!");
+            return;
+        }
         display.innerHTML = games.map(game => `
             <div class="game-card">
                 <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg">
                 <div class="info">
                     <div style="font-weight:bold">${game.name}</div>
                     <div class="price">RM ${game.price.toFixed(2)}</div>
-                    <button class="add-btn" onclick="addToCart('${game.name}', ${game.price})">ADD TO CART</button>
+                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${game.price})">ADD TO CART</button>
                 </div>
             </div>
-        `).join('');
-        updateCartCount();
+        `).join(''); // Added .join('') to prevent commas between cards
     }
+
+    // --- EXECUTION AREA (Run these when the page loads) ---
+    renderStore();
+    updateCartCount();
 
     function addToCart(name, price) {
         cart.push({name, price});
