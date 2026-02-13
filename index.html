@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ace Game Store</title>
+    <style>
+        body { background: #1a202c; color: white; font-family: sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
+        .card { background: #2d3748; padding: 15px; border-radius: 10px; text-align: center; }
+        .btn { background: #66c0f4; border: none; padding: 10px; cursor: pointer; border-radius: 5px; width: 100%; font-weight: bold; }
+        
+        /* THE FLOATING CART - Will never disappear on a real site */
+        #cart-widget { position: fixed; bottom: 20px; right: 20px; background: #ffd700; color: black; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <div id="game-grid" class="grid">
+        </div>
+
+    <div id="cart-widget">
+        <h4 style="margin:0">🛒 My Cart</h4>
+        <div id="cart-items">0 items</div>
+        <div id="cart-total">RM 0.00</div>
+        <button onclick="checkout()" style="margin-top:10px; width:100%">Checkout Telegram</button>
+    </div>
+
+    <script>
+        let cart = [];
+
+        // This function would normally fetch from your Google Sheet
+        function loadGames() {
+            const games = [
+                { id: '3304770', name: 'Exposed Livestream', price: 4.00 },
+                { id: '1924140', name: 'Game B', price: 5.00 }
+            ];
+
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = games.map(game => `
+                <div class="card">
+                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg" style="width:100%">
+                    <h3>${game.name}</h3>
+                    <p>RM ${game.price.toFixed(2)}</p>
+                    <button class="btn" onclick="addToCart('${game.name}', ${game.price})">ADD TO CART</button>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(name, price) {
+            cart.push({name, price});
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('cart-items').innerText = cart.length + " items";
+            const total = cart.reduce((s, i) => s + i.price, 0);
+            document.getElementById('cart-total').innerText = "RM " + total.toFixed(2);
+        }
+
+        function checkout() {
+            const list = cart.map(i => i.name).join(", ");
+            window.open("https://t.me/acegameos?text=" + encodeURIComponent("I want to buy: " + list));
+        }
+
+        loadGames();
+    </script>
+</body>
+</html>
