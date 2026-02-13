@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Details - Ace Store</title>
+    <style>
+        :root { --steam-blue: #1b2838; --steam-light-blue: #66c0f4; --gold: #ffd700; --dark-grey: #0d1117; }
+        body { background: var(--dark-grey); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        header { text-align: center; padding: 20px; border-bottom: 2px solid var(--steam-light-blue); }
+        .back-btn { color: var(--steam-light-blue); cursor: pointer; text-decoration: none; font-weight: bold; }
+        
+        /* Video Container (GIF Style) */
+        .video-box { width: 100%; aspect-ratio: 16/9; background: black; margin: 20px 0; border: 1px solid #333; }
+        video { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Steam Widget Area */
+        .widget-box { margin: 20px 0; border-radius: 8px; overflow: hidden; }
+
+        .specs { background: #161b22; padding: 20px; border-radius: 8px; line-height: 1.6; }
+        .buy-box { background: #2a475e; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; }
+        .price { font-size: 2rem; color: var(--gold); font-weight: bold; }
+        .add-btn { background: #a4d007; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-btn">← Back to Store</a>
+    
+    <header>
+        <h1 id="game-name">Loading Game...</h1>
+    </header>
+
+    <div class="video-box" id="video-container">
+        </div>
+
+    <div class="widget-box" id="steam-widget">
+        </div>
+
+    <div class="specs">
+        <h3>About This Game</h3>
+        <p id="game-desc">Fetching details from the database...</p>
+    </div>
+
+    <div class="buy-box">
+        <div class="price" id="game-price">RM 4.00</div>
+        <button class="add-btn" onclick="addToCartFromDetails()">ADD TO CART</button>
+    </div>
+</div>
+
+<script>
+    // 1. Get Game ID from URL (e.g., ?id=12345)
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('id');
+
+    async function loadDetails() {
+        try {
+            // Fetch the same database your main page uses
+            const response = await fetch('games.json');
+            const games = await response.json();
+            const game = games.find(g => g.id == gameId);
+
+            if (!game) {
+                document.body.innerHTML = "<h1>Game Not Found</h1><a href='index.html'>Go Back</a>";
+                return;
+            }
+
+            // Fill in the details
+            document.getElementById('game-name').innerText = game.name;
+            document.getElementById('game-price').innerText = "RM " + (game.price || 4.00).toFixed(2);
+
+            // Inject the "GIF-Style" Steam Video
+            // Steam videos are usually: https://video.fastly.steamstatic.com/store_trailers/[id]/movie480.webm
+            const videoBox = document.getElementById('video-container');
+            videoBox.innerHTML = `
+                <video autoplay loop muted playsinline>
+                    <source src="https://cdn.akamai.steamstatic.com/steam/apps/${gameId}/movie480_vp9.webm" type="video/webm">
+                </video>`;
+
+            // Inject the Steam Widget
+            const widgetBox = document.getElementById('steam-widget');
+            widgetBox.innerHTML = `
+                <iframe src="https://store.steampowered.com/widget/${gameId}/" 
+                        frameborder="0" width="100%" height="190"></iframe>`;
+
+        } catch (error) {
+            console.error("Error loading details:", error);
+        }
+    }
+
+    function addToCartFromDetails() {
+        // We'll link this to your existing cart logic
+        alert("Added to cart! (Go back to the main page to checkout)");
+    }
+
+    loadDetails();
+</script>
+
+</body>
+</html>
