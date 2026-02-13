@@ -1181,7 +1181,7 @@
   }
 ];
 
-let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
+    let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
 
     function renderStore() {
         const display = document.getElementById('game-display');
@@ -1228,28 +1228,6 @@ let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
     // --- EXECUTION AREA (Run these when the page loads) ---
     renderStore();
     updateCartCount();
-
-    function addToCart(name, price) {
-        cart.push({name, price});
-        localStorage.setItem('ace_cart', JSON.stringify(cart));
-        updateCartCount();
-        alert(name + " added to cart!");
-    }
-
-    function updateCartCount() {
-        document.getElementById('cart-count').innerText = cart.length;
-    }
-
-    function checkout() {
-        if(cart.length === 0) return alert("Cart is empty!");
-        const total = cart.reduce((sum, item) => sum + item.price, 0);
-        const itemNames = cart.map(i => i.name).join(", ");
-        
-        const message = `Order Request:\nItems: ${itemNames}\nTotal: RM ${total.toFixed(2)}`;
-        window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
-    }
-
-    renderStore();
 </script>
 
 </body>
