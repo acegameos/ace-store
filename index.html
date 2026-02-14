@@ -20,9 +20,11 @@
         .info { padding: 15px; }
         .price { color: var(--gold); font-weight: bold; font-size: 1.2rem; margin: 10px 0; }
 
+        /* Font Pairing */
         h1, h2, h3, .price, .add-btn, #search-bar { 
-    font-family: 'Montserrat', sans-serif; 
-    font-weight: 700;
+            font-family: 'Montserrat', sans-serif; 
+            font-weight: 700;
+        } /* <--- Added missing bracket here */
         
         #cart-button { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: black; padding: 15px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; }
 
@@ -41,8 +43,7 @@
     <input type="text" id="search-bar" placeholder="Search 227+ games..." onkeyup="filterGames()">
 </div>
 
-<div class="store-grid" id="game-display">
-    </div>
+<div class="store-grid" id="game-display"></div>
 
 <div id="cart-button" onclick="checkout()">
     🛒 CART (<span id="cart-count">0</span>)
@@ -61,10 +62,9 @@
 </footer>
 
 <script>
-    let allGames = []; // Will hold the data from JSON
+    let allGames = [];
     let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
 
-    // 1. FETCH THE DATABASE
     async function loadGames() {
         try {
             const response = await fetch('games.json');
@@ -76,54 +76,49 @@
         }
     }
 
-    // 2. RENDER GAMES TO SCREEN
     function renderStore(gamesToDisplay) {
         const display = document.getElementById('game-display');
-        // SMART IMAGE LOGIC
-    let imageSrc;
-    if (game.custom_img && game.custom_img !== "") {
-        // Use your Patreon/itch.io image link
-        imageSrc = game.custom_img;
-    } else if (game.id && game.id !== "0") {
-        // Use Steam Header
-        imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-    } else {
-        // Fallback placeholder with game name
-        imageSrc = `https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}`;
+        
+        // REPAIRED RENDER LOGIC
+        display.innerHTML = gamesToDisplay.map(game => {
+            const price = game.price || 4.00;
+            let imageSrc;
+
+            if (game.custom_img && game.custom_img !== "") {
+                imageSrc = game.custom_img;
+            } else if (game.id && game.id !== 0) {
+                imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
+            } else {
+                imageSrc = `https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}`;
+            }
+
+            return `
+            <div class="game-card">
+                <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
+                    <img src="${imageSrc}" onerror="this.src='https://via.placeholder.com/300x150?text=Image+Pending'">
+                </a>
+                <div class="info">
+                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
+                    <div class="price">RM ${price.toFixed(2)}</div>
+                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
-    return `
-    <div class="game-card">
-        <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
-            <img src="${imageSrc}" onerror="this.src='https://via.placeholder.com/300x150?text=Image+Pending'">
-        </a>
-        <div class="info">
-            <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
-            <div class="price">RM ${price.toFixed(2)}</div>
-            <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
-        </div>
-    </div>
-    `;
-}).join('');
-    }
-
-    // 3. SEARCH FILTER
     function filterGames() {
         const query = document.getElementById('search-bar').value.toLowerCase();
         const filtered = allGames.filter(g => g.name.toLowerCase().includes(query));
         renderStore(filtered);
     }
 
-    // 4. CART LOGIC
     function addToCart(name, price) {
         cart.push({name, price});
         localStorage.setItem('ace_cart', JSON.stringify(cart));
         updateCartCount();
-        // Visual feedback instead of annoying alert
         const btn = event.target;
-        const originalText = btn.innerText;
         btn.innerText = "ADDED! ✅";
-        setTimeout(() => btn.innerText = originalText, 1000);
+        setTimeout(() => btn.innerText = "ADD TO CART", 1000);
     }
 
     function updateCartCount() {
@@ -138,10 +133,8 @@
         window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
     }
 
-    // INITIALIZE
     loadGames();
     updateCartCount();
 </script>
-
 </body>
 </html>
