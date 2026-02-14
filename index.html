@@ -67,44 +67,53 @@ let allGames = [];
 
     async function loadGames() {
         try {
-            // Adding a timestamp to the URL to prevent "Caching" issues
-            const response = await fetch('games.json?t=' + Date.now());
+            // Fetch the JSON with a timestamp to avoid old cached versions
+            const response = await fetch('games.json?v=' + Date.now());
+            if (!response.ok) throw new Error('Network response was not ok');
+            
             allGames = await response.json();
+            console.log("Games loaded successfully:", allGames.length);
             renderStore(allGames);
         } catch (error) {
             console.error("Error loading games:", error);
-            document.getElementById('game-display').innerHTML = "<p>Failed to load games. Check games.json.</p>";
+            document.getElementById('game-display').innerHTML = 
+                `<p style="text-align:center; color:red;">Error: Could not load games. Check if games.json has a typo or a missing comma.</p>`;
         }
     }
 
     function renderStore(gamesToDisplay) {
         const display = document.getElementById('game-display');
-        
+        if (!display) return;
+
         display.innerHTML = gamesToDisplay.map(game => {
             const price = game.price || 4.00;
+            const name = game.name || "Unknown Game";
             const gameId = game.id || 0;
             
-            // LOGIC: Use custom_img if it exists, otherwise try Steam
-            let imageSrc = (game.custom_img && game.custom_img.trim() !== "") 
-                ? game.custom_img 
-                : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${gameId}/header.jpg`;
+            // Look for custom_img (handles the 'custome_img' typo just in case)
+            const cImg = game.custom_img || game.custome_img || "";
 
-            // LOGIC: If ID is 0 and no custom img, go straight to placeholder
-            if ((gameId === 0 || gameId === "0") && (!game.custom_img || game.custom_img.trim() === "")) {
-                imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}`;
+            let imageSrc;
+            if (cImg && cImg.trim() !== "") {
+                imageSrc = cImg;
+            } else if (gameId && gameId !== 0 && gameId !== "0") {
+                imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${gameId}/header.jpg`;
+            } else {
+                // Professional blue placeholder if no image exists
+                imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(name)}`;
             }
 
             return `
             <div class="game-card">
-                <a href="details.html?id=${gameId}&name=${encodeURIComponent(game.name)}">
+                <a href="details.html?id=${gameId}&name=${encodeURIComponent(name)}">
                     <img src="${imageSrc}" 
                          loading="lazy" 
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}';">
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(name)}';">
                 </a>
                 <div class="info">
-                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
+                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${name}</div>
                     <div class="price">RM ${price.toFixed(2)}</div>
-                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
+                    <button class="add-btn" onclick="addToCart('${name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
                 </div>
             </div>`;
         }).join('');
@@ -127,7 +136,8 @@ let allGames = [];
     }
 
     function updateCartCount() {
-        document.getElementById('cart-count').innerText = cart.length;
+        const countEl = document.getElementById('cart-count');
+        if (countEl) countEl.innerText = cart.length;
     }
 
     function checkout() {
@@ -138,7 +148,6 @@ let allGames = [];
         window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
     }
 
-    // Start the engine
     loadGames();
     updateCartCount();
 </script>
