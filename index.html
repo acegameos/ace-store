@@ -82,28 +82,29 @@
         // REPAIRED RENDER LOGIC
         display.innerHTML = gamesToDisplay.map(game => {
             const price = game.price || 4.00;
-            let imageSrc;
+        let imageSrc = (game.custom_img && game.custom_img !== "") 
+        ? game.custom_img 
+        : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
 
-            if (game.custom_img && game.custom_img !== "") {
-                imageSrc = game.custom_img;
-            } else if (game.id && game.id !== 0) {
-                imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            } else {
-                imageSrc = `https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}`;
-            }
+        // If ID is 0 and no custom img, go straight to placeholder
+        if ((!game.id || game.id === 0) && (!game.custom_img)) {
+        imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}`;
+        }
 
-            return `
-            <div class="game-card">
-                <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
-                    <img src="${imageSrc}" onerror="this.src='https://via.placeholder.com/300x150?text=Image+Pending'">
-                </a>
-                <div class="info">
-                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
-                    <div class="price">RM ${price.toFixed(2)}</div>
-                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
-                </div>
-            </div>`;
-        }).join('');
+        return `
+    <div class="game-card">
+        <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
+            <img src="${imageSrc}" 
+                 loading="lazy" 
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}';">
+        </a>
+        <div class="info">
+            <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
+            <div class="price">RM ${price.toFixed(2)}</div>
+            <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
+        </div>
+    </div>`;
+}).join('');
     }
 
     function filterGames() {
