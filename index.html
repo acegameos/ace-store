@@ -62,49 +62,52 @@
 </footer>
 
 <script>
-    let allGames = [];
+let allGames = [];
     let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
 
     async function loadGames() {
         try {
-            const response = await fetch('games.json');
+            // Adding a timestamp to the URL to prevent "Caching" issues
+            const response = await fetch('games.json?t=' + Date.now());
             allGames = await response.json();
             renderStore(allGames);
         } catch (error) {
             console.error("Error loading games:", error);
-            document.getElementById('game-display').innerHTML = "<p>Failed to load games. Please check if games.json is uploaded.</p>";
+            document.getElementById('game-display').innerHTML = "<p>Failed to load games. Check games.json.</p>";
         }
     }
 
     function renderStore(gamesToDisplay) {
         const display = document.getElementById('game-display');
         
-        // REPAIRED RENDER LOGIC
         display.innerHTML = gamesToDisplay.map(game => {
             const price = game.price || 4.00;
-        let imageSrc = (game.custom_img && game.custom_img !== "") 
-        ? game.custom_img 
-        : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
+            const gameId = game.id || 0;
+            
+            // LOGIC: Use custom_img if it exists, otherwise try Steam
+            let imageSrc = (game.custom_img && game.custom_img.trim() !== "") 
+                ? game.custom_img 
+                : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${gameId}/header.jpg`;
 
-        // If ID is 0 and no custom img, go straight to placeholder
-        if ((!game.id || game.id === 0) && (!game.custom_img)) {
-        imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}`;
-        }
+            // LOGIC: If ID is 0 and no custom img, go straight to placeholder
+            if ((gameId === 0 || gameId === "0") && (!game.custom_img || game.custom_img.trim() === "")) {
+                imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}`;
+            }
 
-        return `
-        <div class="game-card">
-        <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
-            <img src="${imageSrc}" 
-                 loading="lazy" 
-                 onerror="this.onerror=null; this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}';">
-            </a>
-            <div class="info">
-                <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
-                <div class="price">RM ${price.toFixed(2)}</div>
-                <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
-            </div>
-        </div>`;
-    }).join('');
+            return `
+            <div class="game-card">
+                <a href="details.html?id=${gameId}&name=${encodeURIComponent(game.name)}">
+                    <img src="${imageSrc}" 
+                         loading="lazy" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(game.name)}';">
+                </a>
+                <div class="info">
+                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
+                    <div class="price">RM ${price.toFixed(2)}</div>
+                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     function filterGames() {
@@ -118,8 +121,9 @@
         localStorage.setItem('ace_cart', JSON.stringify(cart));
         updateCartCount();
         const btn = event.target;
+        const originalText = btn.innerText;
         btn.innerText = "ADDED! ✅";
-        setTimeout(() => btn.innerText = "ADD TO CART", 1000);
+        setTimeout(() => btn.innerText = originalText, 1000);
     }
 
     function updateCartCount() {
@@ -134,6 +138,7 @@
         window.open(`https://t.me/acegameos?text=${encodeURIComponent(message)}`);
     }
 
+    // Start the engine
     loadGames();
     updateCartCount();
 </script>
