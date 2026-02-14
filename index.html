@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ace Game OS R18 Store</title>
     <style>
         :root { --steam-blue: #1b2838; --steam-light-blue: #66c0f4; --gold: #ffd700; --dark-grey: #0d1117; }
-        body { background: var(--dark-grey); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; }
+        body { background: var(--dark-grey); color: white; font-family: 'Noto Sans', sans-serif; margin: 0; }
         
         header { background: var(--steam-blue); padding: 40px 20px; text-align: center; border-bottom: 3px solid var(--steam-light-blue); }
         .search-container { margin: 20px auto; max-width: 600px; padding: 0 20px; }
@@ -18,8 +19,10 @@
         .game-card img { width: 100%; display: block; cursor: pointer; }
         .info { padding: 15px; }
         .price { color: var(--gold); font-weight: bold; font-size: 1.2rem; margin: 10px 0; }
-        
-        .add-btn { background: linear-gradient(to bottom, #a4d007 5%, #536904 95%); color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        h1, h2, h3, .price, .add-btn, #search-bar { 
+    font-family: 'Montserrat', sans-serif; 
+    font-weight: 700;
         
         #cart-button { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: black; padding: 15px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; }
 
@@ -76,21 +79,32 @@
     // 2. RENDER GAMES TO SCREEN
     function renderStore(gamesToDisplay) {
         const display = document.getElementById('game-display');
-        display.innerHTML = gamesToDisplay.map(game => {
-            const price = game.price || 4.00;
-            return `
-            <div class="game-card">
-                <a href="details.html?id=${game.id}">
-                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg" 
-                         onerror="this.src='https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}'">
-                </a>
-                <div class="info">
-                    <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
-                    <div class="price">RM ${price.toFixed(2)}</div>
-                    <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
-                </div>
-            </div>
-        `}).join('');
+        // SMART IMAGE LOGIC
+    let imageSrc;
+    if (game.custom_img && game.custom_img !== "") {
+        // Use your Patreon/itch.io image link
+        imageSrc = game.custom_img;
+    } else if (game.id && game.id !== "0") {
+        // Use Steam Header
+        imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
+    } else {
+        // Fallback placeholder with game name
+        imageSrc = `https://via.placeholder.com/300x150?text=${encodeURIComponent(game.name)}`;
+    }
+
+    return `
+    <div class="game-card">
+        <a href="details.html?id=${game.id || 'custom'}&name=${encodeURIComponent(game.name)}">
+            <img src="${imageSrc}" onerror="this.src='https://via.placeholder.com/300x150?text=Image+Pending'">
+        </a>
+        <div class="info">
+            <div style="font-weight:bold; height: 40px; overflow: hidden;">${game.name}</div>
+            <div class="price">RM ${price.toFixed(2)}</div>
+            <button class="add-btn" onclick="addToCart('${game.name.replace(/'/g, "\\'")}', ${price})">ADD TO CART</button>
+        </div>
+    </div>
+    `;
+}).join('');
     }
 
     // 3. SEARCH FILTER
