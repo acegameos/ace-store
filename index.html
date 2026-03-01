@@ -5,32 +5,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ace Game OS R18 Store</title>
-    <style>
-        :root { --steam-blue: #1b2838; --steam-light-blue: #66c0f4; --gold: #ffd700; --dark-grey: #0d1117; }
-        body { background: var(--dark-grey); color: white; font-family: 'Noto Sans', sans-serif; margin: 0; }
-        
-        header { background: var(--steam-blue); padding: 40px 20px; text-align: center; border-bottom: 3px solid var(--steam-light-blue); }
-        .search-container { margin: 20px auto; max-width: 600px; padding: 0 20px; }
-        #search-bar { width: 100%; padding: 12px; border-radius: 25px; border: none; outline: none; font-size: 1rem; }
+<style>
+    /* === NEW SLIDESHOW CSS === */
+    .hero-slider {
+        position: relative;
+        width: 100%;
+        height: 480px; /* Adjust height as needed */
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 20px 0 40px 0;
+        background: #000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
 
-        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; min-height: 400px; }
-        .game-card { background: #161b22; border-radius: 8px; overflow: hidden; border: 1px solid #30363d; transition: 0.3s; }
-        .game-card:hover { transform: translateY(-5px); border-color: var(--steam-light-blue); }
-        .game-card img { width: 100%; display: block; cursor: pointer; }
-        .info { padding: 15px; }
-        .price { color: var(--gold); font-weight: bold; font-size: 1.2rem; margin: 10px 0; }
+    .slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 1.2s ease-in-out;
+        display: none;
+    }
 
-        /* Font Pairing */
-        h1, h2, h3, .price, .add-btn, #search-bar { 
-            font-family: 'Montserrat', sans-serif; 
-            font-weight: 700;
-        } /* <--- Added missing bracket here */
-        
-        #cart-button { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: black; padding: 15px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; }
+    .slide.active {
+        display: block;
+        opacity: 1;
+    }
 
-        footer { background: #1b2838; padding: 40px 20px; text-align: center; border-top: 3px solid #66c0f4; margin-top: 50px; }
-        .footer-socials a { color: var(--steam-light-blue); text-decoration: none; margin: 0 10px; }
-    </style>
+    .slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.7); /* Makes text easier to read */
+    }
+
+    /* Glassmorphism Info Box */
+    .slide-info {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 450px;
+        animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .slide-info h2 { margin: 0; font-size: 2rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .slide-info p { color: var(--steam-light-blue); margin: 8px 0 0 0; font-size: 1.1rem; font-weight: 500; }
+</style>
 </head>
 <body>
 
