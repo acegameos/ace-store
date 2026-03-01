@@ -112,28 +112,47 @@ let allGames = [];
         }
     }
 
-    function renderStore(gamesToDisplay) {
-        const display = document.getElementById('game-display');
-        if (!display) return;
+function renderStore(allGames) {
+    // 1. Handle Slideshow
+    const slider = document.getElementById('hero-slider');
+    const featured = allGames.filter(g => g.is_featured);
+    
+    if (featured.length > 0) {
+        slider.style.display = "block";
+        slider.innerHTML = featured.map((game, index) => `
+            <div class="slide ${index === 0 ? 'active' : ''}">
+                <a href="details.html?id=${game.id}">
+                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/library_hero.jpg" 
+                         onerror="this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg'">
+                    <div class="slide-info">
+                        <h2>${game.name}</h2>
+                        <p>${game.name_cn || ""}</p>
+                    </div>
+                </a>
+            </div>
+        `).join('');
+        startAutoPlay();
+    } else {
+        slider.style.display = "none";
+    }
 
-        display.innerHTML = gamesToDisplay.map(game => {
-            const price = game.price || 4.00;
-            const name = game.name || "Unknown Game";
-            const gameId = game.id || 0;
-            
-            // Look for custom_img (handles the 'custome_img' typo just in case)
-            const cImg = game.custom_img || game.custome_img || "";
+    // 2. Handle Grid (The rest of the games)
+    const display = document.getElementById('game-display');
+    display.innerHTML = allGames.map(game => createCardHTML(game)).join('');
+}
 
-            let imageSrc;
-            if (cImg && cImg.trim() !== "") {
-                imageSrc = cImg;
-            } else if (gameId && gameId !== 0 && gameId !== "0") {
-                imageSrc = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${gameId}/header.jpg`;
-            } else {
-                // Professional blue placeholder if no image exists
-                imageSrc = `https://via.placeholder.com/460x215/1b2838/66c0f4?text=${encodeURIComponent(name)}`;
-            }
-
+let slideInterval;
+function startAutoPlay() {
+    if (slideInterval) clearInterval(slideInterval);
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    
+    slideInterval = setInterval(() => {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+    }, 5000); // 5 seconds
+}
             return `
             <div class="game-card">
                 <a href="details.html?id=${gameId}&name=${encodeURIComponent(name)}">
