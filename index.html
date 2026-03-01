@@ -110,7 +110,7 @@
         }
 
         /* Store Grid */
-        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 20px 0;in-height: 200px; }
         .game-card { background: #161b22; border-radius: 10px; overflow: hidden; border: 1px solid #30363d; transition: 0.3s; position: relative; }
         .game-card:hover { transform: translateY(-5px); border-color: var(--steam-light-blue); }
         .game-card img { width: 100%; aspect-ratio: 460/215; object-fit: cover; }
@@ -194,31 +194,43 @@
             renderGrid(games); 
         }
         
-        function renderGrid(games) {
-            const display = document.getElementById('game-display');
-            if (!display) return;
-        
-            display.innerHTML = games.map(g => {
-                const hotBadge = g.is_hot ? `<div class="badge-hot">🔥 HOT</div>` : "";
-                const currentPrice = (g.price || 4.0).toFixed(2);
-                const oldPriceHTML = (g.original_price > 0) ? `<span class="old-price">RM ${g.original_price.toFixed(2)}</span>` : "";
-                const imgPath = (g.custom_img && g.custom_img !== "") ? g.custom_img : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg`;
-        
-                return `
-                    <div class="game-card">
-                        ${hotBadge}
-                        <a href="details.html?id=${g.id}">
-                            <img src="${imgPath}" onerror="this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=Ace+Game'">
-                        </a>
-                        <div class="info">
-                            <div class="title-en">${g.name}</div>
-                            <div class="title-cn">${g.name_cn || ""}</div>
-                            <div class="price-row">${oldPriceHTML}<span class="price">RM ${currentPrice}</span></div>
-                            <button class="add-btn" onclick="addToCart('${g.name.replace(/'/g, "\\'")}', ${g.price || 4})">ADD TO CART</button>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
+            function renderGrid(games) {
+                const display = document.getElementById('game-display');
+                if (!display) return;
+            
+                display.innerHTML = games.map(g => {
+                    // Safety check: skip if game object is broken
+                    if (!g || !g.id) return "";
+            
+                    const hotBadge = g.is_hot ? `<div class="badge-hot">🔥 HOT</div>` : "";
+                    
+                    // Safety check: ensure price is a number before using .toFixed()
+                    const priceValue = typeof g.price === 'number' ? g.price : 4.0;
+                    const currentPrice = priceValue.toFixed(2);
+                    
+                    const oldPriceHTML = (g.original_price && g.original_price > 0) 
+                        ? `<span class="old-price">RM ${g.original_price.toFixed(2)}</span>` 
+                        : "";
+            
+                    const imgPath = (g.custom_img && g.custom_img !== "") 
+                        ? g.custom_img 
+                        : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg`;
+            
+                    return `
+                        <div class="game-card">
+                            ${hotBadge}
+                            <a href="details.html?id=${g.id}">
+                                <img src="${imgPath}" onerror="this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=Image+Error'">
+                            </a>
+                            <div class="info">
+                                <div class="title-en">${g.name || "Unknown Game"}</div>
+                                <div class="title-cn">${g.name_cn || ""}</div>
+                                <div class="price-row">${oldPriceHTML}<span class="price">RM ${currentPrice}</span></div>
+                                <button class="add-btn" onclick="addToCart('${(g.name || "Game").replace(/'/g, "\\'")}', ${priceValue})">ADD TO CART</button>
+                            </div>
+                        </div>`;
+                }).join('');
+            }
         
         function goToSlide(n) {
             const slides = document.querySelectorAll('.slide');
