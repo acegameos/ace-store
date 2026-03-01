@@ -67,8 +67,8 @@
             background: rgba(0, 0, 0, 0.3); 
             backdrop-filter: blur(15px); 
             -webkit-backdrop-filter: blur(15px);
-            padding: 15px 20px; 
-            border-radius: 2px; 
+            padding: 15px 25px; 
+            border-radius: 25px; 
             border: 1px solid rgba(255, 255, 255, 0.1);
             width: fit-content; 
             max-width: 80%;
@@ -87,7 +87,7 @@
         .slide-info p { 
             color: var(--steam-light-blue); 
             margin: 4px 0 0 0; 
-            font-size: 1.1rem; /* Same size as English Title */
+            font-size: 1.1rem;
             font-weight: 500;
         }
 
@@ -197,22 +197,27 @@
 
     let slideIndex = 0;
     function startAutoPlay() {
-        const slides = document.querySelectorAll('.slide');
-        if (slides.length < 2) return;
-        setInterval(() => {
-            slides[slideIndex].classList.remove('active');
-            slideIndex = (slideIndex + 1) % slides.length;
-            slides[slideIndex].classList.add('active');
-        }, 5000);
-    }
+        // If a timer already exists, kill it immediately
+        if (slideInterval) {
+        clearInterval(slideInterval);
+        }
 
+        // Start a fresh 5-second timer
+        slideInterval = setInterval(() => {
+            const slides = document.querySelectorAll('.slide');
+            if (slides.length < 2) return;
+        
+            let next = (slideIndex + 1) % slides.length;
+            goToSlide(next);
+        }, 5000); 
+    }
+    
     function goToSlide(n) {
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
     
     if(!slides.length || !dots.length) return;
 
-    // 1. Remove 'active' from the old slide and dot
     slides[slideIndex].classList.remove('active');
     dots[slideIndex].classList.remove('active');
     
