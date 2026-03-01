@@ -120,7 +120,7 @@
         } catch (e) { console.error("Load failed", e); }
     }
 
-function renderStore(games) {
+    function renderStore(games) {
     let featured = games.filter(g => g.is_featured);
     if (featured.length === 0) featured = games.slice(0, 5); 
 
@@ -149,7 +149,7 @@ function renderStore(games) {
 
     startAutoPlay();
     renderGrid(games);
-}
+    }
 
     function renderGrid(games) {
         const display = document.getElementById('game-display');
@@ -189,19 +189,21 @@ function renderStore(games) {
     const slides = document.querySelectorAll('.slide');
     const dots = document.querySelectorAll('.dot');
     
-    // Safety check to prevent errors
     if(!slides.length || !dots.length) return;
 
-    // Remove active class from old slide/dot
+    // 1. Remove 'active' from the old slide and dot
     slides[slideIndex].classList.remove('active');
     dots[slideIndex].classList.remove('active');
     
-    // Update index
+    // 2. Update the global index to the one you clicked
     slideIndex = n;
     
-    // Add active class to new slide/dot
+    // 3. Add 'active' to the new slide and dot
     slides[slideIndex].classList.add('active');
     dots[slideIndex].classList.add('active');
+
+    // 4. Restart the auto-play timer so it doesn't flip immediately
+    startAutoPlay();
     }
     
     function filterGames() {
