@@ -185,6 +185,25 @@ function renderStore(games) {
         }, 5000);
     }
 
+    function goToSlide(n) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    
+    // Safety check to prevent errors
+    if(!slides.length || !dots.length) return;
+
+    // Remove active class from old slide/dot
+    slides[slideIndex].classList.remove('active');
+    dots[slideIndex].classList.remove('active');
+    
+    // Update index
+    slideIndex = n;
+    
+    // Add active class to new slide/dot
+    slides[slideIndex].classList.add('active');
+    dots[slideIndex].classList.add('active');
+    }
+    
     function filterGames() {
         const q = document.getElementById('search-bar').value.toLowerCase();
         const filtered = allGames.filter(g => g.name.toLowerCase().includes(q) || (g.name_cn && g.name_cn.toLowerCase().includes(q)));
