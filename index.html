@@ -32,7 +32,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            z-index: 10;
+            z-index: 99;
         }
         
         .dot {
@@ -51,7 +51,7 @@
         }
         
         .dot.active {
-            background: var(--steam-light-blue);
+            background: #66c0f4;(--steam-light-blue);
             height: 25px; /* Makes the active dot a "pill" shape */
             border-radius: 5px;
         }
@@ -120,29 +120,36 @@
         } catch (e) { console.error("Load failed", e); }
     }
 
-    function renderStore(games) {
-        // 1. Setup Slideshow (Use featured games, or first 5 as fallback)
-        let featured = games.filter(g => g.is_featured);
-        if (featured.length === 0) featured = games.slice(0, 5); 
+function renderStore(games) {
+    let featured = games.filter(g => g.is_featured);
+    if (featured.length === 0) featured = games.slice(0, 5); 
 
-        const slider = document.getElementById('hero-slider');
-        slider.innerHTML = featured.map((g, i) => `
-            <div class="slide ${i === 0 ? 'active' : ''}">
-                <a href="details.html?id=${g.id}">
-                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" 
-     onerror="this.onerror=null; this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg';">
-                    <div class="slide-info">
-                        <h2>${g.name}</h2>
-                        <p>${g.name_cn || ""}</p>
-                    </div>
-                </a>
-            </div>
-        `).join('');
-        startAutoPlay();
+    const slider = document.getElementById('hero-slider');
 
-        // 2. Setup Grid
-        renderGrid(games);
-    }
+    // 1. Create the Slides AND the Dots container together
+    const slidesHTML = featured.map((g, i) => `
+        <div class="slide ${i === 0 ? 'active' : ''}">
+            <a href="details.html?id=${g.id}" target="_blank">
+                <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" 
+                     onerror="this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg'">
+                <div class="slide-info">
+                    <h2>${g.name}</h2>
+                    <p>${g.name_cn || ""}</p>
+                </div>
+            </a>
+        </div>
+    `).join('');
+
+    const dotsHTML = `<div id="slider-dots" class="slider-dots">
+        ${featured.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('')}
+    </div>`;
+
+    // 2. Push them both into the slider at once
+    slider.innerHTML = slidesHTML + dotsHTML;
+
+    startAutoPlay();
+    renderGrid(games);
+}
 
     function renderGrid(games) {
         const display = document.getElementById('game-display');
