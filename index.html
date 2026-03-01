@@ -93,7 +93,8 @@
         slider.innerHTML = featured.map((g, i) => `
             <div class="slide ${i === 0 ? 'active' : ''}">
                 <a href="details.html?id=${g.id}">
-                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" onerror="this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg'">
+                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" 
+     onerror="this.onerror=null; this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg';">
                     <div class="slide-info">
                         <h2>${g.name}</h2>
                         <p>${g.name_cn || ""}</p>
