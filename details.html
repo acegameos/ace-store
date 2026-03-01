@@ -3,7 +3,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const appId = urlParams.get('id');
 
 // Cloudflare Worker URL
-const CF_PROXY = "https://calm-forest-04ce.acegame0805.workers.dev/"; 
+const CF_PROXY = "https://calm-forest-04ce.acegame0805.workers.dev/?url="; 
 
 async function loadPageData() {
     if (!appId) return;
