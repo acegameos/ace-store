@@ -148,15 +148,20 @@
 
 <script>
     let allGames = [];
+    let slideIndex = 0;
+    let slideInterval;
     let cart = JSON.parse(localStorage.getItem('ace_cart')) || [];
-
+    
     async function loadGames() {
         try {
+            // Fetching with a timestamp to prevent the browser from showing an old version
             const response = await fetch('games.json?v=' + Date.now());
             allGames = await response.json();
             renderStore(allGames);
             updateCartCount();
-        } catch (e) { console.error("Load failed", e); }
+        } catch (e) {
+            console.error("Failed to load games.json:", e);
+        }
     }
 
     function renderStore(games) {
@@ -168,121 +173,110 @@
         
         // Inject Slides and Dots together
         slider.innerHTML = featured.map((g, i) => `
-            <div class="slide ${i === 0 ? 'active' : ''}">
-                <a href="details.html?id=${g.id}" target="_blank">
-                    <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" 
-                         onerror="this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg'">
-                    <div class="slide-info">
-                        <h2>${g.name}</h2>
-                        <p>${g.name_cn || ""}</p>
-                    </div>
-                </a>
-            </div>
-        `).join('') + `
-        <div id="slider-dots" class="slider-dots">
-            ${featured.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('')}
-        </div>`;
-    
-        // 2. Start the autoplay
-        startAutoPlay();
-    
-        // 3. FIX: Ensure this function exists and is called correctly
-        renderGrid(games); 
-    }
-
-    function renderGrid(games) {
-        const display = document.getElementById('game-display');
-        if (!display) return;
-    
-        display.innerHTML = games.map(g => {
-            // Handle "Hot" badge logic
-            const hotBadge = g.is_hot ? `<div class="badge-hot">🔥 HOT</div>` : "";
-            
-            // Handle Price logic (Default to 4.00 if missing)
-            const currentPrice = (g.price || 4.0).toFixed(2);
-            const oldPriceHTML = (g.original_price > 0) ? `<span class="old-price">RM ${g.original_price.toFixed(2)}</span>` : "";
-    
-            // Handle Image logic
-            const imgPath = (g.custom_img && g.custom_img !== "") ? g.custom_img : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg`;
-    
-            return `
-                <div class="game-card">
-                    ${hotBadge}
-                    <a href="details.html?id=${g.id}">
-                        <img src="${imgPath}" onerror="this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=Ace+Game'">
+                <div class="slide ${i === 0 ? 'active' : ''}">
+                    <a href="details.html?id=${g.id}" target="_blank">
+                        <img src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/library_hero.jpg" 
+                             onerror="this.src='https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg'">
+                        <div class="slide-info">
+                            <h2>${g.name}</h2>
+                            <p>${g.name_cn || ""}</p>
+                        </div>
                     </a>
-                    <div class="info">
-                        <div class="title-en">${g.name}</div>
-                        <div class="title-cn">${g.name_cn || ""}</div>
-                        <div class="price-row">${oldPriceHTML}<span class="price">RM ${currentPrice}</span></div>
-                        <button class="add-btn" onclick="addToCart('${g.name.replace(/'/g, "\\'")}', ${g.price || 4})">ADD TO CART</button>
-                    </div>
-                </div>`;
-        }).join('');
-    }
-
-    let slideIndex = 0;
-    function startAutoPlay() {
-        // If a timer already exists, kill it immediately
-        if (slideInterval) {
-        clearInterval(slideInterval);
-        }
-
-        // Start a fresh 5-second timer
-        slideInterval = setInterval(() => {
-            const slides = document.querySelectorAll('.slide');
-            if (slides.length < 2) return;
+                </div>
+            `).join('') + `
+            <div id="slider-dots" class="slider-dots">
+                ${featured.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></div>`).join('')}
+            </div>`;
         
-            let next = (slideIndex + 1) % slides.length;
-            goToSlide(next);
-        }, 5000); 
-    }
-    
-    function goToSlide(n) {
-    const slides = document.querySelectorAll('.slide');
-    const dots = document.querySelectorAll('.dot');
-    
-    if(!slides.length || !dots.length) return;
-
-    slides[slideIndex].classList.remove('active');
-    dots[slideIndex].classList.remove('active');
-    
-    // 2. Update the global index to the one you clicked
-    slideIndex = n;
-    
-    // 3. Add 'active' to the new slide and dot
-    slides[slideIndex].classList.add('active');
-    dots[slideIndex].classList.add('active');
-
-    // 4. Restart the auto-play timer so it doesn't flip immediately
-    startAutoPlay();
-    }
-    
-    function filterGames() {
-        const q = document.getElementById('search-bar').value.toLowerCase();
-        const filtered = allGames.filter(g => g.name.toLowerCase().includes(q) || (g.name_cn && g.name_cn.toLowerCase().includes(q)));
-        renderGrid(filtered);
-        document.getElementById('hero-slider').style.display = q ? "none" : "block";
-    }
-
-    function addToCart(name, price) {
-        cart.push({name, price});
-        localStorage.setItem('ace_cart', JSON.stringify(cart));
-        updateCartCount();
-        event.target.innerText = "ADDED! ✅";
-        setTimeout(() => event.target.innerText = "ADD TO CART", 1000);
-    }
-
-    function updateCartCount() { document.getElementById('cart-count').innerText = cart.length; }
-
-    function checkout() {
-        if(cart.length === 0) return alert("Cart is empty!");
-        const total = cart.reduce((s, i) => s + i.price, 0);
-        const msg = `Order Request:\n- ${cart.map(i => i.name).join('\n- ')}\n\nTotal: RM ${total.toFixed(2)}`;
-        window.open(`https://t.me/acegameos?text=${encodeURIComponent(msg)}`);
-    }
-
-    loadGames();
+            startAutoPlay();
+        
+            // --- PART B: THE GRID ---
+            renderGrid(games); 
+        }
+        
+        function renderGrid(games) {
+            const display = document.getElementById('game-display');
+            if (!display) return;
+        
+            display.innerHTML = games.map(g => {
+                const hotBadge = g.is_hot ? `<div class="badge-hot">🔥 HOT</div>` : "";
+                const currentPrice = (g.price || 4.0).toFixed(2);
+                const oldPriceHTML = (g.original_price > 0) ? `<span class="old-price">RM ${g.original_price.toFixed(2)}</span>` : "";
+                const imgPath = (g.custom_img && g.custom_img !== "") ? g.custom_img : `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${g.id}/header.jpg`;
+        
+                return `
+                    <div class="game-card">
+                        ${hotBadge}
+                        <a href="details.html?id=${g.id}">
+                            <img src="${imgPath}" onerror="this.src='https://via.placeholder.com/460x215/1b2838/66c0f4?text=Ace+Game'">
+                        </a>
+                        <div class="info">
+                            <div class="title-en">${g.name}</div>
+                            <div class="title-cn">${g.name_cn || ""}</div>
+                            <div class="price-row">${oldPriceHTML}<span class="price">RM ${currentPrice}</span></div>
+                            <button class="add-btn" onclick="addToCart('${g.name.replace(/'/g, "\\'")}', ${g.price || 4})">ADD TO CART</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+        
+        function goToSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+            if(!slides.length || !dots.length) return;
+        
+            slides[slideIndex].classList.remove('active');
+            dots[slideIndex].classList.remove('active');
+            
+            slideIndex = n;
+            
+            slides[slideIndex].classList.add('active');
+            dots[slideIndex].classList.add('active');
+        
+            startAutoPlay(); 
+        }
+        
+        function startAutoPlay() {
+            if (slideInterval) clearInterval(slideInterval);
+            slideInterval = setInterval(() => {
+                const slides = document.querySelectorAll('.slide');
+                if (slides.length < 2) return;
+                let next = (slideIndex + 1) % slides.length;
+                goToSlide(next);
+            }, 5000); 
+        }
+        
+        function filterGames() {
+            const q = document.getElementById('search-bar').value.toLowerCase();
+            const filtered = allGames.filter(g => 
+                g.name.toLowerCase().includes(q) || (g.name_cn && g.name_cn.toLowerCase().includes(q))
+            );
+            renderGrid(filtered);
+            // Hide slider if searching to make it cleaner
+            document.getElementById('hero-slider').style.display = q ? "none" : "block";
+        }
+        
+        function addToCart(name, price) {
+            cart.push({name, price});
+            localStorage.setItem('ace_cart', JSON.stringify(cart));
+            updateCartCount();
+            event.target.innerText = "ADDED! ✅";
+            setTimeout(() => event.target.innerText = "ADD TO CART", 1000);
+        }
+        
+        function updateCartCount() {
+            document.getElementById('cart-count').innerText = cart.length;
+        }
+        
+        function checkout() {
+            if(cart.length === 0) return alert("Cart is empty!");
+            const total = cart.reduce((s, i) => s + i.price, 0);
+            const msg = `Order Request:\n- ${cart.map(i => i.name).join('\n- ')}\n\nTotal: RM ${total.toFixed(2)}`;
+            window.open(`https://t.me/acegameos?text=${encodeURIComponent(msg)}`);
+        }
+        
+        // Start the whole thing
+        loadGames();
 </script>
 </body>
 </html>
