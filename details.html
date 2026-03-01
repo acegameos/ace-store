@@ -1,102 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Details - Ace Store</title>
-    <style>
-        :root { --steam-blue: #1b2838; --steam-light-blue: #66c0f4; --gold: #ffd700; --dark-grey: #0d1117; }
-        body { background: var(--dark-grey); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        header { text-align: center; padding: 20px; border-bottom: 2px solid var(--steam-light-blue); }
-        .back-btn { color: var(--steam-light-blue); cursor: pointer; text-decoration: none; font-weight: bold; }
+// JavaScript
+const urlParams = new URLSearchParams(window.location.search);
+const appId = urlParams.get('id');
+
+// Cloudflare Worker URL
+const CF_PROXY = "https://calm-forest-04ce.acegame0805.workers.dev/"; 
+
+async function loadPageData() {
+    if (!appId) return;
+
+    try {
+        // 1. Fetch data from Steam via your Cloudflare Proxy
+        const steamUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`;
+        const response = await fetch(CF_PROXY + encodeURIComponent(steamUrl));
+        const json = await response.json();
         
-        /* Video Container (GIF Style) */
-        .video-box { width: 100%; aspect-ratio: 16/9; background: black; margin: 20px 0; border: 1px solid #333; }
-        video { width: 100%; height: 100%; object-fit: contain; }
+        if (!json[appId].success) return;
+        const data = json[appId].data;
 
-        /* Steam Widget Area */
-        .widget-box { margin: 20px 0; border-radius: 8px; overflow: hidden; }
+        // 2. Map Steam Data to your UI
+        document.getElementById('game-title').innerText = data.name;
+        document.getElementById('game-capsule').src = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`;
+        document.getElementById('pay-capsule').src = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`;
+        
+        // 3. Ratings & Reviews logic
+        const reviewText = data.recommendations ? "Overwhelmingly Positive" : "Very Positive";
+        const reviewCount = data.recommendations ? data.recommendations.total.toLocaleString() : "1,000+";
+        document.getElementById('game-reviews').innerHTML = `${reviewText} <span style="color:#888; font-weight:normal;">(${reviewCount} reviews)</span>`;
 
-        .specs { background: #161b22; padding: 20px; border-radius: 8px; line-height: 1.6; }
-        .buy-box { background: #2a475e; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; }
-        .price { font-size: 2rem; color: var(--gold); font-weight: bold; }
-        .add-btn { background: #a4d007; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-    </style>
-</head>
-<body>
+        // 4. Languages & Description
+        document.getElementById('game-languages').innerHTML = "<b>Languages:</b> " + data.supported_languages;
+        document.getElementById('game-about').innerHTML = data.detailed_description;
+        document.getElementById('system-requirements').innerHTML = data.pc_requirements.minimum;
 
-<div class="container">
-    <a href="index.html" class="back-btn">← Back to Store</a>
-    
-    <header>
-        <h1 id="game-name">Loading Game...</h1>
-    </header>
-
-    <div class="video-box" id="video-container">
-        </div>
-
-    <div class="widget-box" id="steam-widget">
-        </div>
-
-    <div class="specs">
-        <h3>About This Game</h3>
-        <p id="game-desc">Fetching details from the database...</p>
-    </div>
-
-    <div class="buy-box">
-        <div class="price" id="game-price">RM 4.00</div>
-        <button class="add-btn" onclick="addToCartFromDetails()">ADD TO CART</button>
-    </div>
-</div>
-
-<script>
-    // 1. Get Game ID from URL (e.g., ?id=12345)
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameId = urlParams.get('id');
-
-    async function loadDetails() {
-        try {
-            // Fetch the same database your main page uses
-            const response = await fetch('games.json');
-            const games = await response.json();
-            const game = games.find(g => g.id == gameId);
-
-            if (!game) {
-                document.body.innerHTML = "<h1>Game Not Found</h1><a href='index.html'>Go Back</a>";
-                return;
-            }
-
-            // Fill in the details
-            document.getElementById('game-name').innerText = game.name;
-            document.getElementById('game-price').innerText = "RM " + (game.price || 4.00).toFixed(2);
-
-            // Inject the "GIF-Style" Steam Video
-            // Steam videos are usually: https://video.fastly.steamstatic.com/store_trailers/[id]/movie480.webm
-            const videoBox = document.getElementById('video-container');
-            videoBox.innerHTML = `
-                <video autoplay loop muted playsinline>
-                    <source src="https://cdn.akamai.steamstatic.com/steam/apps/${gameId}/movie480_vp9.webm" type="video/webm">
-                </video>`;
-
-            // Inject the Steam Widget
-            const widgetBox = document.getElementById('steam-widget');
-            widgetBox.innerHTML = `
-                <iframe src="https://store.steampowered.com/widget/${gameId}/" 
-                        frameborder="0" width="100%" height="190"></iframe>`;
-
-        } catch (error) {
-            console.error("Error loading details:", error);
+        // 5. Media Scroller (Videos + Screenshots)
+        const mediaContainer = document.getElementById('media-scroller');
+        let mediaHTML = "";
+        if (data.movies) {
+            data.movies.forEach(m => {
+                mediaHTML += `<video controls poster="${m.thumbnail}"><source src="${m.webm.max}" type="video/webm"></video>`;
+            });
         }
+        data.screenshots.forEach(ss => {
+            mediaHTML += `<img src="${ss.path_full}" loading="lazy">`;
+        });
+        mediaContainer.innerHTML = mediaHTML;
+
+        // 6. Support Widget
+        document.getElementById('steam-widget-container').innerHTML = `
+            <iframe src="https://store.steampowered.com/widget/${appId}/" frameborder="0" width="100%" height="190"></iframe>
+        `;
+
+        // 7. Dynamic Price Fetching (Matches your games.json)
+        fetchAcePrice(appId, data.price_overview ? data.price_overview.initial / 100 : 59.00);
+
+    } catch (err) {
+        console.error("Cloudflare Fetch Error:", err);
     }
+}
 
-    function addToCartFromDetails() {
-        // We'll link this to your existing cart logic
-        alert("Added to cart! (Go back to the main page to checkout)");
-    }
+async function fetchAcePrice(id, steamOriginal) {
+    const res = await fetch('games.json');
+    const games = await res.json();
+    const myGame = games.find(g => g.id == id);
+    
+    // If game is in your list, show your price. If not, default to RM 4.00
+    const acePrice = myGame ? myGame.price : 4.00;
+    
+    document.getElementById('pay-old-price').innerText = `RM ${steamOriginal.toFixed(2)}`;
+    document.getElementById('pay-new-price').innerText = `RM ${acePrice.toFixed(2)}`;
+}
 
-    loadDetails();
-</script>
+loadPageData();
 
-</body>
-</html>
+// CSS Section
+.content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, padding 0.3s ease;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.content.open {
+    max-height: 2000px; /* Big enough to show the content */
+    padding: 20px;
+}
+
+// JavaScript
+document.querySelector('.collapsible').addEventListener('click', function() {
+    this.classList.toggle('active');
+    const content = document.getElementById('game-about');
+    content.classList.toggle('open');
+    this.innerText = this.classList.contains('active') ? "▲ Close Details" : "▼ About the Game";
+});
