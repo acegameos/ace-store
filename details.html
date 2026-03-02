@@ -1,94 +1,98 @@
-// JavaScript
-const urlParams = new URLSearchParams(window.location.search);
-const appId = urlParams.get('id');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Details - Ace Game</title>
+    <link rel="stylesheet" href="style.css"> </head>
+<body>
 
-// Cloudflare Worker URL
-const CF_PROXY = "https://calm-forest-04ce.acegame0805.workers.dev/?url="; 
-
-async function loadPageData() {
-    if (!appId) return;
-
-    try {
-        // 1. Fetch data from Steam via your Cloudflare Proxy
-        const steamUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`;
-        const response = await fetch(CF_PROXY + encodeURIComponent(steamUrl));
-        const json = await response.json();
+    <div class="container">
+        <h1 id="game-title">Loading...</h1>
         
-        if (!json[appId].success) return;
-        const data = json[appId].data;
+        <div class="header-images">
+            <img id="game-capsule" src="" alt="Game Header" style="width: 100%; border-radius: 8px;">
+        </div>
 
-        // 2. Map Steam Data to your UI
-        document.getElementById('game-title').innerText = data.name;
-        document.getElementById('game-capsule').src = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`;
-        document.getElementById('pay-capsule').src = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`;
-        
-        // 3. Ratings & Reviews logic
-        const reviewText = data.recommendations ? "Overwhelmingly Positive" : "Very Positive";
-        const reviewCount = data.recommendations ? data.recommendations.total.toLocaleString() : "1,000+";
-        document.getElementById('game-reviews').innerHTML = `${reviewText} <span style="color:#888; font-weight:normal;">(${reviewCount} reviews)</span>`;
+        <div id="steam-widget-container" style="margin-top: 20px;">
+            </div>
 
-        // 4. Languages & Description
-        document.getElementById('game-languages').innerHTML = "<b>Languages:</b> " + data.supported_languages;
-        document.getElementById('game-about').innerHTML = data.detailed_description;
-        document.getElementById('system-requirements').innerHTML = data.pc_requirements.minimum;
+        <div class="price-section" style="margin-top: 20px; padding: 15px; background: #1b2838; border-radius: 8px; color: white;">
+            <h3>Ace Game Special Price</h3>
+            <p>Steam Price: <span id="pay-old-price" style="text-decoration: line-through; color: #888;">--</span></p>
+            <p>Our Price: <span id="pay-new-price" style="font-size: 1.5em; color: #66c0f4; font-weight: bold;">--</span></p>
+            <img id="pay-capsule" src="" alt="Checkout Capsule" style="width: 100px; margin-top: 10px; border-radius: 4px;">
+        </div>
+    </div>
 
-        // 5. Media Scroller (Videos + Screenshots)
-        const mediaContainer = document.getElementById('media-scroller');
-        let mediaHTML = "";
-        if (data.movies) {
-            data.movies.forEach(m => {
-                mediaHTML += `<video controls poster="${m.thumbnail}"><source src="${m.webm.max}" type="video/webm"></video>`;
-            });
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const appId = urlParams.get('id');
+
+        // IMPORTANT: Ensure this matches your Cloudflare Worker's expected format
+        const CF_PROXY = "https://calm-forest-04ce.acegame0805.workers.dev/?url="; 
+
+        async function loadPageData() {
+            if (!appId) {
+                document.getElementById('game-title').innerText = "No Game ID Provided";
+                return;
+            }
+
+            try {
+                // 1. Fetch data from Steam via Proxy
+                const steamUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`;
+                const response = await fetch(CF_PROXY + encodeURIComponent(steamUrl));
+                
+                if (!response.ok) throw new Error("Proxy connection failed");
+
+                const json = await response.json();
+                
+                if (!json[appId] || !json[appId].success) {
+                    throw new Error("Steam data not found");
+                }
+
+                const data = json[appId].data;
+
+                // 2. Update UI with Steam Data
+                document.getElementById('game-title').innerText = data.name;
+                const capsuleUrl = `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`;
+                document.getElementById('game-capsule').src = capsuleUrl;
+                document.getElementById('pay-capsule').src = capsuleUrl;
+                
+                // 3. Insert Steam Widget
+                document.getElementById('steam-widget-container').innerHTML = `
+                    <div style="width: 100%; overflow: hidden;">
+                        <iframe src="https://store.steampowered.com/widget/${appId}/" frameborder="0" width="100%" height="190"></iframe>
+                    </div>
+                `;
+
+                // 4. Fetch your custom price from games.json
+                const steamOriginalPrice = data.price_overview ? (data.price_overview.initial / 100).toFixed(2) : "59.00";
+                fetchAcePrice(appId, steamOriginalPrice);
+
+            } catch (err) {
+                console.error("Error loading data:", err);
+                document.getElementById('game-title').innerText = "Error Loading Game Details";
+            }
         }
-        data.screenshots.forEach(ss => {
-            mediaHTML += `<img src="${ss.path_full}" loading="lazy">`;
-        });
-        mediaContainer.innerHTML = mediaHTML;
 
-        // 6. Support Widget
-        document.getElementById('steam-widget-container').innerHTML = `
-            <iframe src="https://store.steampowered.com/widget/${appId}/" frameborder="0" width="100%" height="190"></iframe>
-        `;
+        async function fetchAcePrice(id, steamOriginal) {
+            try {
+                const res = await fetch('games.json');
+                const games = await res.json();
+                const myGame = games.find(g => g.id == id || g.id == parseInt(id));
+                
+                // Fallback to RM 4.00 if the game isn't in your JSON list
+                const acePrice = myGame ? myGame.price : 4.00;
+                
+                document.getElementById('pay-old-price').innerText = `RM ${steamOriginal}`;
+                document.getElementById('pay-new-price').innerText = `RM ${parseFloat(acePrice).toFixed(2)}`;
+            } catch (err) {
+                console.error("Error fetching local price:", err);
+            }
+        }
 
-        // 7. Dynamic Price Fetching (Matches your games.json)
-        fetchAcePrice(appId, data.price_overview ? data.price_overview.initial / 100 : 59.00);
-
-    } catch (err) {
-        console.error("Cloudflare Fetch Error:", err);
-    }
-}
-
-async function fetchAcePrice(id, steamOriginal) {
-    const res = await fetch('games.json');
-    const games = await res.json();
-    const myGame = games.find(g => g.id == id);
-    
-    // If game is in your list, show your price. If not, default to RM 4.00
-    const acePrice = myGame ? myGame.price : 4.00;
-    
-    document.getElementById('pay-old-price').innerText = `RM ${steamOriginal.toFixed(2)}`;
-    document.getElementById('pay-new-price').innerText = `RM ${acePrice.toFixed(2)}`;
-}
-
-loadPageData();
-
-// CSS Section
-.content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-out, padding 0.3s ease;
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.content.open {
-    max-height: 2000px; /* Big enough to show the content */
-    padding: 20px;
-}
-
-// JavaScript
-document.querySelector('.collapsible').addEventListener('click', function() {
-    this.classList.toggle('active');
-    const content = document.getElementById('game-about');
-    content.classList.toggle('open');
-    this.innerText = this.classList.contains('active') ? "▲ Close Details" : "▼ About the Game";
-});
+        loadPageData();
+    </script>
+</body>
+</html>
